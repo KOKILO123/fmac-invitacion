@@ -34,6 +34,14 @@ body{width:100%;min-height:100vh;background:#b8d8f0;display:flex;justify-content
 .isub{font-size:clamp(14px,4vw,17px);color:#4a7fa8;font-weight:600;line-height:1.55;animation:fu .9s .3s ease forwards;opacity:0}
 .progress-bar{width:180px;height:5px;background:rgba(91,174,232,.25);border-radius:10px;margin-top:28px;overflow:hidden;animation:fu .9s .5s ease forwards;opacity:0}
 .progress-fill{height:100%;background:linear-gradient(90deg,#5baee8,#3d8fc8);border-radius:10px;width:0}
+.intro-tap-btn{margin-top:28px;background:linear-gradient(135deg,#5baee8,#3d8fc8);border:none;border-radius:50px;padding:18px 40px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 6px 28px rgba(91,174,232,.5);animation:fu .9s .5s ease forwards,tapPulse 1.8s 1.4s ease-in-out infinite;opacity:0;font-family:'Nunito',sans-serif}
+.tap-icon{font-size:28px;animation:heartBeat 1s ease-in-out infinite}
+.tap-text{font-size:18px;font-weight:800;color:#fff;letter-spacing:.5px}
+.tap-sub{font-size:12px;color:rgba(255,255,255,.8);font-weight:600}
+@keyframes tapPulse{0%,100%{transform:scale(1);box-shadow:0 6px 28px rgba(91,174,232,.5)}50%{transform:scale(1.06);box-shadow:0 8px 36px rgba(91,174,232,.8)}}
+@keyframes heartBeat{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+.music-fab{position:fixed;bottom:24px;right:18px;z-index:400;background:linear-gradient(135deg,#5baee8,#3d8fc8);border:none;border-radius:50px;padding:10px 18px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:0 4px 20px rgba(91,174,232,.5);display:none;align-items:center;gap:7px;transition:transform .15s}
+.music-fab:active{transform:scale(.95)}
 @keyframes fu{to{opacity:1;transform:translateY(0)}from{opacity:0;transform:translateY(18px)}}
 
 /* CARD */
@@ -162,11 +170,16 @@ body{width:100%;min-height:100vh;background:#b8d8f0;display:flex;justify-content
   <span class="ibear">🐻</span>
   <div class="ititle">Un pequeño corazón<br>está a punto de llegar...</div>
   <div class="isub">Alguien muy especial<br>nos quiere compartir<br>una noticia hermosa 💙</div>
-  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <button class="intro-tap-btn" id="introTapBtn" onclick="enterInvitation()">
+    <span class="tap-icon">💙</span>
+    <span class="tap-text">Toca para abrir</span>
+    <span class="tap-sub">y escuchar la música</span>
+  </button>
 </div>
 
 <!-- CARD -->
 <div id="card">
+  <button class="music-fab" id="musicFab" onclick="toggleMusic()">🎵 Música</button>
   <img id="balSmallImg" src="" style="position:absolute;left:35%;top:58%;width:46px;z-index:3;pointer-events:none;opacity:0.88;animation:bfl 5.5s 0.5s ease-in-out infinite" alt="">
   <img id="balLeftImg" src="" style="position:absolute;left:-28px;top:120px;width:90px;z-index:3;pointer-events:none;opacity:0.92" alt="">
   <img id="balRightImg" src="" style="position:absolute;right:-8px;top:120px;width:90px;z-index:3;pointer-events:none;opacity:0.92" alt="">
@@ -383,141 +396,115 @@ function buildTicker(){
 }
 
 // AUTO INTRO
+// ── Init intro hearts ────────────────────────────────────────────────────────
 (function(){
   const hearts=['💙','⭐','💙','✨','🌟'];
   const hel=document.getElementById('introHearts');
-  for(let i=0;i<10;i++){const h=document.createElement('div');h.className='ih';h.textContent=hearts[i%hearts.length];h.style.cssText=`left:${10+Math.random()*80}%;top:${20+Math.random()*55}%;animation-delay:${Math.random()*3}s;animation-duration:${3+Math.random()*2}s`;hel.appendChild(h)}
-  const fill=document.getElementById('progressFill');
-  const TOTAL=3800,start=Date.now();
-  const tick=()=>{
-    const pct=Math.min(100,(Date.now()-start)/TOTAL*100);
-    fill.style.width=pct+'%';
-    if(pct<100){requestAnimationFrame(tick)}
-    else{
-      document.getElementById('intro').classList.add('hide');
-      setTimeout(()=>{document.getElementById('intro').style.display='none';document.getElementById('card').style.display='block';buildCard()},800);
-    }
-  };
-  requestAnimationFrame(tick);
-})();
-
-function startMusic(){
-  const VIDEO_ID = 'HsQ_15gBBG4';
-  const btn = document.getElementById('musicBtn');
-  let player = null;
-  let isPlaying = false;
-  let apiReady = false;
-
-  // ── Cargar API de YouTube ──────────────────────────────────────────────────
-  // La inyectamos en el <head> UNA sola vez
-  if (!window._ytScriptAdded) {
-    window._ytScriptAdded = true;
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    const first = document.getElementsByTagName('script')[0];
-    first.parentNode.insertBefore(tag, first);
+  for(let i=0;i<10;i++){
+    const h2=document.createElement('div');
+    h2.className='ih';
+    h2.textContent=hearts[i%hearts.length];
+    h2.style.cssText=`left:${10+Math.random()*80}%;top:${20+Math.random()*55}%;animation-delay:${Math.random()*3}s;animation-duration:${3+Math.random()*2}s`;
+    hel.appendChild(h2);
   }
+})
 
-  // ── Contenedor del player (tamaño real mínimo para iOS) ───────────────────
-  // iOS exige que el iframe tenga tamaño real visible en pantalla para el autoplay
-  // Lo ponemos con opacity 0 y tamaño pequeño pero real (no display:none)
-  if (!document.getElementById('yt-wrap')) {
-    const wrap = document.createElement('div');
-    wrap.id = 'yt-wrap';
-    wrap.style.cssText = [
-      'position:fixed',
-      'bottom:0',
-      'left:0',
-      'width:1px',
-      'height:1px',
-      'overflow:hidden',
-      'opacity:0',
-      'pointer-events:none',
-      'z-index:-1'
-    ].join(';');
-    wrap.innerHTML = '<div id="yt-player"></div>';
+// ── Enter invitation: triggered by tap button ─────────────────────────────────
+// This tap IS the user gesture — YouTube can start from here on mobile
+function enterInvitation(){
+  // Preload YouTube API immediately on user gesture
+  if(!window._ytScriptAdded){
+    window._ytScriptAdded=true;
+    const tag=document.createElement('script');
+    tag.src='https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+  }
+  // Also create hidden player container now (while we have the gesture)
+  if(!document.getElementById('yt-wrap')){
+    const wrap=document.createElement('div');
+    wrap.id='yt-wrap';
+    wrap.style.cssText='position:fixed;bottom:0;left:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;z-index:-1';
+    wrap.innerHTML='<div id="yt-player"></div>';
     document.body.appendChild(wrap);
   }
+  // Animate out intro
+  const intro=document.getElementById('intro');
+  intro.classList.add('hide');
+  setTimeout(()=>{
+    intro.style.display='none';
+    document.getElementById('card').style.display='block';
+    buildCard();
+    // Show FAB
+    const fab=document.getElementById('musicFab');
+    if(fab) fab.style.display='flex';
+  },800);
+}();
 
-  function buildPlayer() {
-    if (player || !apiReady) return;
-    player = new YT.Player('yt-player', {
-      width: '1',
-      height: '1',
-      videoId: VIDEO_ID,
-      playerVars: {
-        autoplay:       0,   // 0 = esperamos interacción del usuario (requerido en móvil)
-        controls:       0,
-        disablekb:      1,
-        enablejsapi:    1,
-        fs:             0,
-        loop:           1,
-        modestbranding: 1,
-        playsinline:    1,   // crítico para iOS — evita pantalla completa
-        playlist:       VIDEO_ID,
-        rel:            0,
-        origin:         window.location.origin || 'https://localhost',
+// ── Global YouTube state ─────────────────────────────────────────────────────
+window._ytPlayer   = null;
+window._ytPlaying  = false;
+window._ytApiReady = false;
+
+window.onYouTubeIframeAPIReady = function(){
+  window._ytApiReady = true;
+  _createYTPlayer();
+};
+
+function _createYTPlayer(){
+  if(window._ytPlayer || !window._ytApiReady) return;
+  if(!document.getElementById('yt-player')) return; // container not ready
+  window._ytPlayer = new YT.Player('yt-player',{
+    width:'1', height:'1',
+    videoId:'HsQ_15gBBG4',
+    playerVars:{
+      autoplay:1, controls:0, disablekb:1,
+      fs:0, loop:1, modestbranding:1,
+      playsinline:1, playlist:'HsQ_15gBBG4',
+      rel:0, origin:location.origin||'https://localhost'
+    },
+    events:{
+      onReady(e){
+        e.target.setVolume(75);
+        e.target.playVideo();
       },
-      events: {
-        onReady(e) {
-          e.target.setVolume(80);
-          // Intentar autoplay — funciona en Android; en iOS necesita toque
-          try { e.target.playVideo(); } catch(_){}
-        },
-        onStateChange(e) {
-          const S = YT.PlayerState;
-          if (e.data === S.PLAYING) { isPlaying = true;  setBtn(true);  }
-          if (e.data === S.PAUSED ||
-              e.data === S.ENDED  ||
-              e.data === S.CUED)   { isPlaying = false; setBtn(false); }
-        },
-        onError(e) {
-          console.warn('YT error code:', e.data);
-          setBtn(false);
-        }
-      }
-    });
-  }
-
-  function setBtn(on) {
-    btn.textContent     = on ? '🔇 Pausar música' : '🎵 Escuchar música';
-    btn.style.background = on ? 'rgba(91,174,232,0.18)' : 'rgba(255,255,255,0.9)';
-    btn.style.borderColor = on ? '#7bbde0' : '#c9e8ff';
-  }
-
-  // ── Callback global que YouTube llama cuando la API está lista ────────────
-  // Usamos cola para no pisar otros posibles handlers
-  const prevReady = window.onYouTubeIframeAPIReady;
-  window.onYouTubeIframeAPIReady = function() {
-    if (prevReady) prevReady();
-    apiReady = true;
-    buildPlayer();
-  };
-  // Si la API ya estaba cargada antes de que llegáramos aquí
-  if (window.YT && window.YT.Player) { apiReady = true; buildPlayer(); }
-
-  // ── Botón: primer toque crea el player si no existe; los siguientes toggle ─
-  btn.addEventListener('click', function handler() {
-    if (!apiReady) {
-      // API aún no cargó — avisar y esperar
-      btn.textContent = '⏳ Cargando...';
-      return;
+      onStateChange(e){
+        const S=YT.PlayerState;
+        const on=(e.data===S.PLAYING);
+        window._ytPlaying=on;
+        _updateMusicUI(on);
+      },
+      onError(){ _updateMusicUI(false); }
     }
-    if (!player) {
-      buildPlayer();
-      // En móvil el primer click YA es la interacción necesaria;
-      // onReady llamará playVideo automáticamente
-      return;
-    }
-    try {
-      const state = player.getPlayerState();
-      if (state === YT.PlayerState.PLAYING) {
-        player.pauseVideo();
-      } else {
-        player.playVideo();
-      }
-    } catch(e) { console.warn(e); }
   });
+}
+
+function _updateMusicUI(on){
+  // Update both the bottom sheet button and the FAB
+  const btn=document.getElementById('musicBtn');
+  const fab=document.getElementById('musicFab');
+  if(btn){ btn.textContent=on?'🔇 Pausar música':'🎵 Escuchar música'; btn.style.background=on?'rgba(91,174,232,0.18)':'rgba(255,255,255,0.9)'; }
+  if(fab){ fab.textContent=on?'🔇 Pausar':'🎵 Música'; fab.style.opacity=on?'1':'0.85'; }
+}
+
+function toggleMusic(){
+  if(!window._ytPlayer){
+    // API still loading — try now
+    if(window._ytApiReady) _createYTPlayer();
+    return;
+  }
+  try{
+    const s=window._ytPlayer.getPlayerState();
+    if(s===YT.PlayerState.PLAYING) window._ytPlayer.pauseVideo();
+    else window._ytPlayer.playVideo();
+  }catch(e){ console.warn(e); }
+}
+
+function startMusic(){
+  // Player already created in enterInvitation — just wire up buttons
+  const btn=document.getElementById('musicBtn');
+  if(btn) btn.addEventListener('click', toggleMusic);
+  // If API ready, create player now (in case enterInvitation already ran)
+  if(window._ytApiReady && !window._ytPlayer) _createYTPlayer();
 }
 </script>
 </body>
