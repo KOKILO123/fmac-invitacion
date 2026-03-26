@@ -173,7 +173,6 @@ body{width:100%;min-height:100vh;background:#b8d8f0;display:flex;justify-content
   <button class="intro-tap-btn" id="introTapBtn" onclick="enterInvitation()">
     <span class="tap-icon">💙</span>
     <span class="tap-text">Toca para abrir</span>
-    <span class="tap-sub">y escuchar la música</span>
   </button>
 </div>
 
@@ -481,8 +480,7 @@ function _createYTPlayer(){
 function _updateMusicUI(on){
   // Update both the bottom sheet button and the FAB
   const btn=document.getElementById('musicBtn');
-  const fab=document.getElementById('musicFab');
-  if(btn){ btn.textContent=on?'🔇 Pausar música':'🎵 Escuchar música'; btn.style.background=on?'rgba(91,174,232,0.18)':'rgba(255,255,255,0.9)'; }
+  const fab=document.getElementById('musicFab'); 
   if(fab){ fab.textContent=on?'🔇 Pausar':'🎵 Música'; fab.style.opacity=on?'1':'0.85'; }
 }
 
