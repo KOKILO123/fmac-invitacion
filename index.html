@@ -407,7 +407,7 @@ function buildTicker(){
     h2.style.cssText=`left:${10+Math.random()*80}%;top:${20+Math.random()*55}%;animation-delay:${Math.random()*3}s;animation-duration:${3+Math.random()*2}s`;
     hel.appendChild(h2);
   }
-})
+})();
 
 // ── Enter invitation: triggered by tap button ─────────────────────────────────
 // This tap IS the user gesture — YouTube can start from here on mobile
@@ -438,7 +438,7 @@ function enterInvitation(){
     const fab=document.getElementById('musicFab');
     if(fab) fab.style.display='flex';
   },800);
-}();
+}
 
 // ── Global YouTube state ─────────────────────────────────────────────────────
 window._ytPlayer   = null;
